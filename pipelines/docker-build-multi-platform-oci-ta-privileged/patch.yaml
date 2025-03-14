@@ -1,0 +1,65 @@
+---
+- op: add
+  path: /spec/description
+  value: |
+    This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
+
+    _Uses `buildah` to create a multi-platform container image leveraging [trusted artifacts](https://konflux-ci.dev/architecture/ADR/0036-trusted-artifacts.html). It also optionally creates a source image and runs some build-time tests. This pipeline requires that the [multi platform controller](https://github.com/konflux-ci/multi-platform-controller) is deployed and configured on your Konflux instance. Information is shared between tasks using OCI artifacts instead of PVCs. EC will pass the [`trusted_task.trusted`](https://enterprisecontract.dev/docs/ec-policies/release_policy.html#trusted_task__trusted) policy as long as all data used to build the artifact is generated from trusted tasks.
+    This pipeline is pushed as a Tekton bundle to [quay.io](https://quay.io/repository/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta-privileged?tab=tags)_
+- op: replace
+  path: /metadata/name
+  value: docker-build-multi-platform-oci-ta-privileged
+# Order of Tasks from the base docker-build Pipeline:
+# $ kustomize build pipelines/docker-build-multi-platform-oci-ta | yq ".spec.tasks.[].name" | nl -v 0
+#
+#     0	init
+#     1	clone-repository
+#     2	prefetch-dependencies
+#     3	build-images
+#     4	build-image-index
+#     5	build-source-image
+#     6	deprecated-base-image-check
+#     7	clair-scan
+#     8	ecosystem-cert-preflight-checks
+#     9	sast-snyk-check
+#    10	clamav-scan
+#    11	sast-coverity-check
+#    12	coverity-availability-check
+#    13	sast-shell-check
+#    14	sast-unicode-check
+#    15	apply-tags
+#    16	push-dockerfile
+#    17	rpms-signature-scan
+- op: add
+  path: /spec/tasks/3/params/-
+  value:
+    name: PRIVILEGED_NESTED
+    value: "$(params.privileged-nested)"
+
+# Order of pipeline parameters
+# $ kustomize build pipelines/docker-build-multi-platform-oci-ta | yq ".spec.params.[].name" | nl -v 0
+#
+#     0	git-url
+#     1	revision
+#     2	output-image
+#     3	path-context
+#     4	dockerfile
+#     5	rebuild
+#     6	skip-checks
+#     7	hermetic
+#     8	prefetch-input
+#     9	image-expires-after
+#    10	build-source-image
+#    11	build-image-index
+#    12	build-args
+#    13	build-args-file
+#    14	build-platforms
+
+# Add a pipeline definition parameter to allow nested privileges
+- op: add
+  path: /spec/params/-
+  value:
+    name: privileged-nested
+    description: Whether to enable privileged mode
+    type: string
+    default: "false"

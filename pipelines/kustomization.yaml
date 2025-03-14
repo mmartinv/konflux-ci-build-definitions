@@ -4,6 +4,7 @@ resources:
 - docker-build
 - docker-build-oci-ta
 - docker-build-multi-platform-oci-ta
+- docker-build-multi-platform-oci-ta-privileged
 - enterprise-contract.yaml
 - fbc-builder
 - tekton-bundle-builder
